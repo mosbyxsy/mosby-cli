@@ -1,0 +1,128 @@
+#!/usr/bin/env node
+
+const program = require('commander') //命令参数
+const chalk = require('chalk') //命令行颜色
+const path = require('path') //路径相关
+const fs = require('fs') //对系统文件及目录进行读写操作
+const glob = require('glob') //筛选文件
+const inquirer = require('inquirer') // 命令行交互
+const ora = require('ora') //命令行loading，git bash无法展示
+const download = require('../lib/download') //下载
+const generator = require('../lib/generator') //构建模板
+const rm = require('rimraf').sync //删除
+
+program.usage('<project-name>')
+  .option('-r, --repository [repository]', 'template repository')
+  .on('--help', () => {
+    console.log('Examples:')
+    console.log('$', chalk.green('mosby init my-project'), 'or', chalk.green('mosby init -r username/repo my-project'))
+  })
+  .parse(process.argv)
+program.args.length < 1 && program.help()
+
+const projectName = program.args[0] // 项目名称
+const list = glob.sync('*') //Array：当前目录所有文件
+const rootName = path.basename(process.cwd()) // 根目录
+const templateUrl = program.repository ? program.repository : 'mosbyxsy/template-cli#master' // 模板下载地址
+
+// 获得项目目录
+function projectPathNext () {
+  if (list.length) {
+    // 当前目录不是空文件夹
+    const sameProjectList = list.filter(name => {
+      const fileName = path.resolve(process.cwd(), name)
+      const isDir = fs.statSync(fileName).isDirectory()
+      return name === projectName && isDir
+    })
+    if (sameProjectList.length) {
+      // 当前目录里面有输入的projectName文件夹
+      console.log(chalk.red(`${projectName} directory is exist`))
+    } else {
+      if (projectName === '.') {
+        return inquirer.prompt([
+          {
+            name: 'emptyCurrent',
+            message: 'Do you want to clear the current directory?',
+            type: 'confirm',
+            default: true
+          }
+        ]).then(answer => {
+          if (answer.emptyCurrent) {
+            rm('./.*')
+            rm('./*')
+            return Promise.resolve(projectName)
+          } else {
+            console.log(chalk.red('The current directory is not empty'))
+          }
+        })
+      } else {
+        return Promise.resolve(projectName)
+      }
+    }
+  } else if (rootName === projectName) {
+    // 当前目录为空并且projectName与根目录相同
+    return inquirer.prompt([
+      {
+        name: 'buildInCurrent',
+        message: 'The current directory is empty and the directory name is the same as the project name. Do you want to create a new project directly in the current directory?',
+        type: 'confirm',
+        default: true
+      }
+    ]).then(answer => {
+      return Promise.resolve(answer.buildInCurrent ? projectName : '.')
+    })
+  } else {
+    // 当前目录为空并且projectName与根目录不同
+    return Promise.resolve(projectName)
+  }
+}
+
+// 下载模板
+function downloadTemplate () {
+  projectPathNext().then(projectName => {
+    projectName && download(templateUrl, projectName)
+      .then(target => {
+        return {
+          name: projectName === '.' ? rootName : projectName,
+          downloadTemp: target
+        }
+      })
+      .then(context => {
+        return inquirer.prompt([
+          {
+            name: 'name',
+            message: 'name',
+            default: context.name
+          },
+          {
+            name: 'version',
+            message: 'version',
+            default: '1.0.0'
+          },
+          {
+            name: 'description',
+            message: 'description',
+            default: `A project named ${context.name}`
+          },
+          {
+            name: 'author',
+            message: 'author',
+            default: `mosby`
+          }
+        ]).then(answers => {
+          return {
+            ...context,
+            metadata: {
+              ...answers
+            }
+          }
+        })
+      })
+      .then(context => {
+        console.log(context);
+        return generator(context.metadata, context.downloadTemp, path.parse(context.downloadTemp).dir);
+      })
+  })
+}
+
+downloadTemplate()

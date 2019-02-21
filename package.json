@@ -1,0 +1,27 @@
+{
+  "name": "mosby-cli",
+  "version": "1.0.0",
+  "description": "mosby-cli",
+  "main": "index.js",
+  "scripts": {},
+  "bin": {
+    "mosby": "bin/mosby",
+    "mosby-init": "bin/mosby-init"
+  },
+  "keywords": [
+    "mosby-cli"
+  ],
+  "author": "mosby",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "commander": "^2.19.0",
+    "download-git-repo": "^1.1.0",
+    "glob": "^7.1.3",
+    "handlebars": "^4.1.0",
+    "inquirer": "^6.2.2",
+    "metalsmith": "^2.3.0",
+    "ora": "^3.1.0",
+    "rimraf": "^2.6.3"
+  }
+}
