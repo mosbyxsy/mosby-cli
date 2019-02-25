@@ -24,7 +24,7 @@ program.args.length < 1 && program.help()
 const projectName = program.args[0] // 项目名称
 const list = glob.sync('*') //Array：当前目录所有文件
 const rootName = path.basename(process.cwd()) // 根目录
-const templateUrl = program.repository ? program.repository : 'mosbyxsy/template-cli#master' // 模板下载地址
+const templateUrl = program.repository ? program.repository : 'mosbyxsy/mosby-cli-template#master' // 模板下载地址
 
 // 获得项目目录
 function projectPathNext () {
