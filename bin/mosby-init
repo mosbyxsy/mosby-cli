@@ -10,6 +10,7 @@ const ora = require('ora') //命令行loading，git bash无法展示
 const download = require('../lib/download') //下载
 const generator = require('../lib/generator') //构建模板
 const rm = require('rimraf').sync //删除
+const getGitUser = require('../lib/git-user') //获得git user
 
 program.usage('<project-name>')
   .option('-r, --repository [repository]', 'template repository')
@@ -107,7 +108,7 @@ function downloadTemplate () {
           {
             name: 'author',
             message: 'author',
-            default: `mosby`
+            default: getGitUser() || ""
           }
         ]).then(answers => {
           return {
